@@ -1,0 +1,19 @@
+{
+  "name": "ateam_codex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "a2a-mentions.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0"
+  }
+}

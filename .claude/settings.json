@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__web-search-prime__webSearchPrime",
+      "Bash(node:*)",
+      "Bash(gemini --help:*)",
+      "Bash(gemini:*)",
+      "Bash(claude:*)",
+      "Bash(/bin/bash:*)",
+      "Bash(codex:*)"
+    ]
+  }
+}
