@@ -10,11 +10,41 @@ let availableCats = [];
 let selectedCats = new Set();
 let eventSource = null;
 
-function appendLog(type, text) {
-  const item = document.createElement('div');
-  item.className = `log-item ${type}`;
-  item.textContent = text;
-  logEl.appendChild(item);
+function formatTime(ts = Date.now()) {
+  return new Date(ts).toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+function appendMessage({ text, label, direction = 'left', kind = 'agent' }) {
+  const row = document.createElement('article');
+  row.className = `message-row ${direction === 'right' ? 'right' : ''} ${kind === 'system' ? 'system' : ''}`.trim();
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
+
+  const meta = document.createElement('div');
+  meta.className = 'bubble-meta';
+
+  const author = document.createElement('span');
+  author.textContent = label;
+
+  const time = document.createElement('span');
+  time.textContent = formatTime();
+
+  const content = document.createElement('div');
+  content.className = 'bubble-content';
+  content.textContent = text;
+
+  meta.appendChild(author);
+  meta.appendChild(time);
+  bubble.appendChild(meta);
+  bubble.appendChild(content);
+  row.appendChild(bubble);
+
+  logEl.appendChild(row);
   logEl.scrollTop = logEl.scrollHeight;
 }
 
@@ -23,6 +53,7 @@ function renderCats() {
   availableCats.forEach((catId) => {
     const wrapper = document.createElement('label');
     wrapper.className = 'cat-pill';
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = catId;
@@ -30,12 +61,14 @@ function renderCats() {
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
         selectedCats.add(catId);
-      } else {
-        selectedCats.delete(catId);
+        return;
       }
+      selectedCats.delete(catId);
     });
+
     const text = document.createElement('span');
     text.textContent = catId;
+
     wrapper.appendChild(checkbox);
     wrapper.appendChild(text);
     catsEl.appendChild(wrapper);
@@ -46,9 +79,10 @@ function connectStream(threadId) {
   if (eventSource) {
     eventSource.close();
   }
+
   eventSource = new EventSource(`/api/stream?threadId=${encodeURIComponent(threadId)}`);
   eventSource.onopen = () => {
-    statusText.textContent = '已连接';
+    statusText.textContent = `已连接 · ${threadId}`;
   };
   eventSource.onerror = () => {
     statusText.textContent = '连接中断，自动重试…';
@@ -56,13 +90,32 @@ function connectStream(threadId) {
   eventSource.onmessage = (event) => {
     const payload = JSON.parse(event.data);
     if (payload.type === 'cli') {
-      appendLog('cli', `[${payload.catId}] ${payload.text}`);
+      appendMessage({
+        text: payload.text,
+        label: `${payload.catId} · CLI`,
+        direction: 'left',
+        kind: 'agent'
+      });
+      return;
     }
+
     if (payload.type === 'message') {
-      appendLog('message', `[${payload.catId}] ${payload.content}`);
+      appendMessage({
+        text: payload.content,
+        label: payload.catId,
+        direction: 'left',
+        kind: 'agent'
+      });
+      return;
     }
+
     if (payload.type === 'system') {
-      appendLog('system', payload.message);
+      appendMessage({
+        text: payload.message,
+        label: 'System',
+        direction: 'left',
+        kind: 'system'
+      });
     }
   };
 }
@@ -79,16 +132,28 @@ async function bootstrap() {
 runBtn.addEventListener('click', async () => {
   const threadId = threadInput.value.trim() || 'default';
   connectStream(threadId);
+
   const cats = Array.from(selectedCats);
   if (cats.length === 0) {
-    appendLog('system', '请至少选择一只猫。');
+    appendMessage({ text: '请至少选择一只猫。', label: 'System', kind: 'system' });
     return;
   }
+
   const prompt = promptInput.value.trim();
   if (!prompt) {
-    appendLog('system', '请输入 prompt。');
+    appendMessage({ text: '请输入 prompt。', label: 'System', kind: 'system' });
     return;
   }
+
+  appendMessage({
+    text: prompt,
+    label: 'You',
+    direction: 'right',
+    kind: 'user'
+  });
+
+  promptInput.value = '';
+
   await fetch('/api/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -106,5 +171,5 @@ threadInput.addEventListener('change', () => {
 
 bootstrap().catch((err) => {
   statusText.textContent = '初始化失败';
-  appendLog('system', err.message);
+  appendMessage({ text: err.message, label: 'System', kind: 'system' });
 });
