@@ -3,6 +3,7 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { writeIoLog } = require('./io-logger');
 
 const DEFAULT_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const DEFAULT_KILL_GRACE_MS = 5000; // 5 seconds
@@ -89,6 +90,7 @@ async function invoke(cli, prompt, options = {}) {
   const retryDelayMs = options.retryDelayMs == null ? DEFAULT_RETRY_DELAY_MS : options.retryDelayMs;
 
   const runAttempt = (attempt) => new Promise((resolve, reject) => {
+    writeIoLog('ai-cli.input', { cli, prompt, options, attempt });
     const config = getCliConfig(cli, prompt, options);
     const args = typeof config.args === 'function' ? config.args() : config.args;
     const child = spawn(config.command, args, {
@@ -263,12 +265,14 @@ async function invoke(cli, prompt, options = {}) {
       }
 
       if (code === 0) {
+        writeIoLog('ai-cli.output', { cli, attempt, output });
         resolve(output);
       } else {
         const reason = terminationReason ? `，原因: ${terminationReason}` : '';
         const stderrTail = stderrLines.length ? `\n--- stderr (last ${stderrLines.length} lines) ---\n${stderrLines.join('\n')}` : '';
         const cliMsg = cliError ? `\n--- cli error ---\n${cliError}` : '';
         const error = new Error(`进程退出码: ${code}${reason}${cliMsg}${stderrTail}`);
+        writeIoLog('ai-cli.process-error', { cli, attempt, code, reason: terminationReason, cliError, stderrLines });
         error.retryable = true;
         error.code = 'exit';
         reject(error);
@@ -500,6 +504,7 @@ if (require.main === module) {
       process.stdout.write('\n');
     })
     .catch((err) => {
+      writeIoLog('ai-cli.error', { cli, prompt, options, error: err.message });
       console.error('\n错误:', err.message);
       process.exit(1);
     });

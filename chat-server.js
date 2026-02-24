@@ -8,6 +8,7 @@ const { randomUUID } = require('crypto');
 const { enqueueA2ATargets } = require('./a2a-registry');
 const { routeSerial, getDefaultMcpServerPath } = require('./a2a-router');
 const { listCatIds } = require('./cats');
+const { writeIoLog } = require('./io-logger');
 
 const PORT = Number(process.env.CAT_CAFE_PORT || 3200);
 const WEB_DIR = path.join(process.cwd(), 'web');
@@ -48,6 +49,7 @@ function validateToken(payload) {
 }
 
 function pushEvent(threadId, event) {
+  writeIoLog('chat.output', { threadId, event });
   const payload = JSON.stringify(event);
   for (const client of sseClients) {
     if (client.threadId !== threadId) continue;
@@ -131,6 +133,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && pathname === '/api/bootstrap') {
+    writeIoLog('chat.input.bootstrap', { path: pathname });
     return sendJson(res, 200, {
       apiUrl: `http://localhost:${PORT}`,
       invocationId,
@@ -147,6 +150,7 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       return sendJson(res, 400, { error: 'invalid_json' });
     }
+    writeIoLog('chat.input.run', { threadId: payload.threadId || 'default', payload });
     sendJson(res, 200, { status: 'queued' });
     void handleRun(payload);
     return;
@@ -160,6 +164,8 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       return sendJson(res, 400, { error: 'invalid_json' });
     }
+
+    writeIoLog('chat.input.callback', { payload });
 
     if (!validateToken(payload)) {
       return sendJson(res, 401, { error: 'unauthorized' });
@@ -187,6 +193,8 @@ const server = http.createServer(async (req, res) => {
       invocationId: query.invocationId,
       callbackToken: query.callbackToken
     };
+
+    writeIoLog('chat.input.callback', { payload });
 
     if (!validateToken(payload)) {
       return sendJson(res, 401, { error: 'unauthorized' });
