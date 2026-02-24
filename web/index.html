@@ -3,48 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cat Cafe Thread</title>
+    <title>Cat Cafe Chat</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="layout">
-      <aside class="composer">
-        <div class="brand">
-          <h1>Cat Cafe</h1>
-          <p>多猫协作线程</p>
+    <main class="chat-app">
+      <header class="chat-header">
+        <div>
+          <h1>Cat Cafe Chat</h1>
+          <p>多猫协作 · Web 聊天界面</p>
         </div>
+        <div class="status-pill" id="statusText">连接中…</div>
+      </header>
 
-        <div class="card field">
-          <label for="threadId">Thread</label>
+      <section class="chat-toolbar">
+        <label class="toolbar-field">
+          <span>Thread</span>
           <input id="threadId" value="demo" />
-        </div>
-
-        <div class="card field">
-          <label>猫猫成员</label>
+        </label>
+        <div class="toolbar-field grow">
+          <span>猫猫成员</span>
           <div id="cats" class="cats"></div>
         </div>
+      </section>
 
-        <div class="card field">
-          <label for="prompt">Prompt</label>
-          <textarea id="prompt" rows="6" placeholder="例如：请先给出方案，再 @缅因猫 做审阅"></textarea>
+      <section id="log" class="chat-log"></section>
+
+      <section class="chat-composer">
+        <textarea id="prompt" rows="3" placeholder="输入你的消息，点击发送后由选中的猫猫协作处理..."></textarea>
+        <div class="composer-actions">
+          <button id="clearBtn" class="ghost">清空</button>
+          <button id="runBtn">发送</button>
         </div>
-
-        <div class="actions">
-          <button id="runBtn">开始运行</button>
-          <button id="clearBtn" class="ghost">清空线程</button>
-        </div>
-      </aside>
-
-      <section class="thread-panel">
-        <header class="thread-header">
-          <div>
-            <h2>Game Thread</h2>
-            <p>参考猫猫黑手党对话风格的多色消息流</p>
-          </div>
-          <div class="status-pill"><span id="statusText">连接中…</span></div>
-        </header>
-
-        <div id="log" class="thread"></div>
       </section>
     </main>
 

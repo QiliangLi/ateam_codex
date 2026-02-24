@@ -18,12 +18,15 @@ function formatTime(ts = Date.now()) {
   });
 }
 
-function appendLog(type, text, label = type) {
-  const item = document.createElement('article');
-  item.className = `log-item ${type}`;
+function appendMessage({ text, label, direction = 'left', kind = 'agent' }) {
+  const row = document.createElement('article');
+  row.className = `message-row ${direction === 'right' ? 'right' : ''} ${kind === 'system' ? 'system' : ''}`.trim();
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
 
   const meta = document.createElement('div');
-  meta.className = 'log-meta';
+  meta.className = 'bubble-meta';
 
   const author = document.createElement('span');
   author.textContent = label;
@@ -31,15 +34,17 @@ function appendLog(type, text, label = type) {
   const time = document.createElement('span');
   time.textContent = formatTime();
 
-  meta.appendChild(author);
-  meta.appendChild(time);
-
   const content = document.createElement('div');
+  content.className = 'bubble-content';
   content.textContent = text;
 
-  item.appendChild(meta);
-  item.appendChild(content);
-  logEl.appendChild(item);
+  meta.appendChild(author);
+  meta.appendChild(time);
+  bubble.appendChild(meta);
+  bubble.appendChild(content);
+  row.appendChild(bubble);
+
+  logEl.appendChild(row);
   logEl.scrollTop = logEl.scrollHeight;
 }
 
@@ -48,6 +53,7 @@ function renderCats() {
   availableCats.forEach((catId) => {
     const wrapper = document.createElement('label');
     wrapper.className = 'cat-pill';
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = catId;
@@ -59,8 +65,10 @@ function renderCats() {
       }
       selectedCats.delete(catId);
     });
+
     const text = document.createElement('span');
     text.textContent = catId;
+
     wrapper.appendChild(checkbox);
     wrapper.appendChild(text);
     catsEl.appendChild(wrapper);
@@ -71,6 +79,7 @@ function connectStream(threadId) {
   if (eventSource) {
     eventSource.close();
   }
+
   eventSource = new EventSource(`/api/stream?threadId=${encodeURIComponent(threadId)}`);
   eventSource.onopen = () => {
     statusText.textContent = `已连接 · ${threadId}`;
@@ -81,15 +90,32 @@ function connectStream(threadId) {
   eventSource.onmessage = (event) => {
     const payload = JSON.parse(event.data);
     if (payload.type === 'cli') {
-      appendLog('cli', payload.text, `${payload.catId} / cli`);
+      appendMessage({
+        text: payload.text,
+        label: `${payload.catId} · CLI`,
+        direction: 'left',
+        kind: 'agent'
+      });
       return;
     }
+
     if (payload.type === 'message') {
-      appendLog('message', payload.content, payload.catId);
+      appendMessage({
+        text: payload.content,
+        label: payload.catId,
+        direction: 'left',
+        kind: 'agent'
+      });
       return;
     }
+
     if (payload.type === 'system') {
-      appendLog('system', payload.message, 'system');
+      appendMessage({
+        text: payload.message,
+        label: 'System',
+        direction: 'left',
+        kind: 'system'
+      });
     }
   };
 }
@@ -109,17 +135,24 @@ runBtn.addEventListener('click', async () => {
 
   const cats = Array.from(selectedCats);
   if (cats.length === 0) {
-    appendLog('system', '请至少选择一只猫。', 'system');
+    appendMessage({ text: '请至少选择一只猫。', label: 'System', kind: 'system' });
     return;
   }
 
   const prompt = promptInput.value.trim();
   if (!prompt) {
-    appendLog('system', '请输入 prompt。', 'system');
+    appendMessage({ text: '请输入 prompt。', label: 'System', kind: 'system' });
     return;
   }
 
-  appendLog('system', `已提交任务：${prompt}`, 'you');
+  appendMessage({
+    text: prompt,
+    label: 'You',
+    direction: 'right',
+    kind: 'user'
+  });
+
+  promptInput.value = '';
 
   await fetch('/api/run', {
     method: 'POST',
@@ -138,5 +171,5 @@ threadInput.addEventListener('change', () => {
 
 bootstrap().catch((err) => {
   statusText.textContent = '初始化失败';
-  appendLog('system', err.message, 'system');
+  appendMessage({ text: err.message, label: 'System', kind: 'system' });
 });
