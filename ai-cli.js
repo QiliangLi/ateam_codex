@@ -402,58 +402,68 @@ function getCliConfig(cli, prompt, options) {
 if (require.main === module) {
   const args = process.argv.slice(2);
   const cli = args[0];
-  const prompt = args[1];
   const options = {};
+  let prompt = '';
 
-  // 解析 -m 参数（模型）
-  const modelFlagIndex = args.indexOf('-m');
-  if (modelFlagIndex !== -1 && args[modelFlagIndex + 1]) {
-    options.model = args[modelFlagIndex + 1];
-  }
+  const argList = args.slice(1);
 
-  // 解析 --resume 参数（继续上次对话）
-  if (args.includes('--resume')) {
-    options.resume = true;
-  }
+  for (let i = 0; i < argList.length; i++) {
+    const arg = argList[i];
 
-  // 解析 --timeout 参数（默认单位秒，支持 ms/s/m/h）
-  const timeoutFlagIndex = args.indexOf('--timeout');
-  if (timeoutFlagIndex !== -1 && args[timeoutFlagIndex + 1]) {
-    const parsed = parseDurationToMs(args[timeoutFlagIndex + 1]);
-    if (parsed != null) {
-      options.timeoutMs = parsed;
+    if (arg === '-m' && argList[i + 1]) {
+      options.model = argList[i + 1];
+      i += 1;
+      continue;
     }
-  }
 
-  // 解析 --no-timeout
-  if (args.includes('--no-timeout')) {
-    options.timeoutMs = 0;
-  }
-
-  // 解析 --kill-grace 参数（优雅退出等待时间）
-  const killGraceFlagIndex = args.indexOf('--kill-grace');
-  if (killGraceFlagIndex !== -1 && args[killGraceFlagIndex + 1]) {
-    const parsed = parseDurationToMs(args[killGraceFlagIndex + 1]);
-    if (parsed != null) {
-      options.killGraceMs = parsed;
+    if (arg === '--resume') {
+      options.resume = true;
+      continue;
     }
-  }
 
-  // 解析 --retry 参数（重试次数）
-  const retryFlagIndex = args.indexOf('--retry');
-  if (retryFlagIndex !== -1 && args[retryFlagIndex + 1]) {
-    const parsed = Number(args[retryFlagIndex + 1]);
-    if (Number.isFinite(parsed)) {
-      options.retries = Math.max(0, Math.floor(parsed));
+    if (arg === '--timeout' && argList[i + 1]) {
+      const parsed = parseDurationToMs(argList[i + 1]);
+      if (parsed != null) {
+        options.timeoutMs = parsed;
+      }
+      i += 1;
+      continue;
     }
-  }
 
-  // 解析 --retry-delay 参数（重试间隔）
-  const retryDelayFlagIndex = args.indexOf('--retry-delay');
-  if (retryDelayFlagIndex !== -1 && args[retryDelayFlagIndex + 1]) {
-    const parsed = parseDurationToMs(args[retryDelayFlagIndex + 1]);
-    if (parsed != null) {
-      options.retryDelayMs = parsed;
+    if (arg === '--no-timeout') {
+      options.timeoutMs = 0;
+      continue;
+    }
+
+    if (arg === '--kill-grace' && argList[i + 1]) {
+      const parsed = parseDurationToMs(argList[i + 1]);
+      if (parsed != null) {
+        options.killGraceMs = parsed;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--retry' && argList[i + 1]) {
+      const parsed = Number(argList[i + 1]);
+      if (Number.isFinite(parsed)) {
+        options.retries = Math.max(0, Math.floor(parsed));
+      }
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--retry-delay' && argList[i + 1]) {
+      const parsed = parseDurationToMs(argList[i + 1]);
+      if (parsed != null) {
+        options.retryDelayMs = parsed;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (!arg.startsWith('-') && !prompt) {
+      prompt = arg;
     }
   }
 
