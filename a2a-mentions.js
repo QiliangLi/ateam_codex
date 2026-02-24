@@ -10,6 +10,7 @@ function escapeRegex(text) {
 
 function parseA2AMentions(text, currentCatId, options = {}) {
   const maxTargets = options.maxTargets == null ? 2 : options.maxTargets;
+  const mode = options.mode || 'agent';
   if (!text) return [];
 
   const stripped = stripCodeBlocks(text);
@@ -20,7 +21,9 @@ function parseA2AMentions(text, currentCatId, options = {}) {
 
     for (const pattern of config.mentionPatterns) {
       const escaped = escapeRegex(pattern);
-      const regex = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
+      const regex = mode === 'agent'
+        ? new RegExp(`(^|\\n)\\s*(?:[-*•]|\\d+\\.)?\\s*${escaped}(?=\\s|$)`, 'i')
+        : new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
       if (regex.test(stripped)) {
         if (!found.includes(id)) found.push(id);
         break;

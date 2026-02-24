@@ -179,7 +179,12 @@ const server = http.createServer(async (req, res) => {
     messages.push({ role: catId, content, ts: Date.now() });
     pushEvent(threadId, { type: 'message', catId, content });
 
-    const mentions = enqueueA2ATargets(threadId, content, catId);
+    const mentions = enqueueA2ATargets(threadId, content, catId, {
+      mode: 'agent',
+      maxTargets: 2,
+      allowRequeueExecuted: true,
+      maxRequeuePerCat: 1
+    });
     if (mentions.length > 0) {
       pushEvent(threadId, { type: 'system', message: `A2A 入队: ${mentions.join(', ')}` });
     }
