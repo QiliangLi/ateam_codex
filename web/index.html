@@ -3,43 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cat Cafe CLI Chat</title>
+    <title>Cat Cafe Chat</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="header">
+    <main class="chat-app">
+      <header class="chat-header">
         <div>
-          <h1>Cat Cafe CLI Chat</h1>
-          <p>在网页里发起 A2A 调用，查看 CLI 输出与回传消息。</p>
+          <h1>Cat Cafe Chat</h1>
+          <p>多猫协作 · Web 聊天界面</p>
         </div>
-        <div class="status">
-          <span id="statusText">连接中…</span>
-        </div>
+        <div class="status-pill" id="statusText">连接中…</div>
       </header>
 
-      <section class="panel">
-        <div class="field">
-          <label>Thread</label>
+      <section class="chat-toolbar">
+        <label class="toolbar-field">
+          <span>Thread</span>
           <input id="threadId" value="demo" />
-        </div>
-        <div class="field">
-          <label>猫猫</label>
+        </label>
+        <div class="toolbar-field grow">
+          <span>猫猫成员</span>
           <div id="cats" class="cats"></div>
-        </div>
-        <div class="field">
-          <label>Prompt</label>
-          <textarea id="prompt" rows="4" placeholder="输入任务，比如：请写一段总结并 @缅因猫 review"></textarea>
-        </div>
-        <div class="actions">
-          <button id="runBtn">Run</button>
-          <button id="clearBtn" class="ghost">Clear</button>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Events</h2>
-        <div id="log" class="log"></div>
+      <section id="log" class="chat-log"></section>
+
+      <section class="chat-composer">
+        <textarea id="prompt" rows="3" placeholder="输入你的消息，点击发送后由选中的猫猫协作处理..."></textarea>
+        <div class="composer-actions">
+          <button id="clearBtn" class="ghost">清空</button>
+          <button id="runBtn">发送</button>
+        </div>
       </section>
     </main>
 
